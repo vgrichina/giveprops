@@ -7,9 +7,7 @@ import getConfig from './config'
 const { networkId } = getConfig(process.env.NODE_ENV || 'development')
 
 export default function App() {
-  // use React Hooks to store greeting in component state
-  const [greeting, setGreeting] = React.useState()
-
+  const [recentProps, setRecentProps] = React.useState([])
   const [submitting, setSubmitting] = React.useState(false)
 
   // when the user has not yet interacted with the form, disable the button
@@ -21,14 +19,7 @@ export default function App() {
     () => {
       // in this case, we only care to query the contract when signed in
       if (window.walletConnection.isSignedIn()) {
-
-        // TODO: Load list of props
-
-        // // window.contract is set by initContract in index.js
-        // window.contract.getGreeting({ accountId: window.accountId })
-        //   .then(greetingFromContract => {
-        //     setGreeting(greetingFromContract)
-        //   })
+        window.contract.getRecentProps().then(setRecentProps)
       }
     },
 
@@ -65,31 +56,21 @@ export default function App() {
       </button>
       <main>
         <h1>
-          <label
-            htmlFor="greeting"
-            style={{
-              color: 'var(--secondary)',
-              borderBottom: '2px solid var(--secondary)'
-            }}
-          >
-            {greeting}
-          </label>
-          {' '/* React trims whitespace around tags; insert literal space character when needed */}
-          {window.accountId}!
+          Hello, {window.accountId}!
         </h1>
         <form onSubmit={async event => {
           event.preventDefault()
 
           const form = event.target
           const message = form.querySelector('textarea').value
-          const receiverId = form.querySelector('input[name="receiverId"]').value
+          const receiver = form.querySelector('input[name="receiver"]').value
 
           try {
             setSubmitting(true)
 
             // make an update call to the smart contract
             await window.contract.giveProps({
-              receiverId,
+              receiver,
               message
             })
           } catch (e) {
@@ -107,7 +88,7 @@ export default function App() {
 
             <p>Give props to:
 
-              <input type="text" placeholder="username.near" name="receiverId"></input>
+              <input type="text" placeholder="username.near" name="receiver"></input>
             </p>
 
             <label
@@ -120,7 +101,7 @@ export default function App() {
               Add a note
             </label>
 
-            <textarea style={{ width: '100%', height: '12em', fontSize: '1em' }}>For being awesome</textarea>
+            <textarea style={{ width: '100%', height: '12em', fontSize: '1em' }} defaultValue='For being awesome'/>
 
             <button
               //disabled={buttonDisabled}
@@ -130,6 +111,16 @@ export default function App() {
             </button>
           </fieldset>
         </form>
+
+        <h2>Recent props</h2>
+        {
+          recentProps.map(({ sender, receiver, message, timestamp }) => <div key={`${sender}:${receiver}:${timestamp}`}>
+            <p>{sender} gave {receiver} props for:</p>
+            <blockquote>{message}</blockquote>
+          </div>)
+        }
+
+        <h2>Your props</h2>
 
         <p>You haven't given or received any props yet.</p>
 
