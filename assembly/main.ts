@@ -14,27 +14,24 @@
 
 import { Context, logging, storage } from "near-sdk-as";
 
-const DEFAULT_MESSAGE = "Hello"
+import { Props, allProps, propsByReceiver, propsBySender } from './model';
 
-// Exported functions will be part of the public interface for your smart contract.
-// Feel free to extract behavior to non-exported functions!
-export function getGreeting(accountId: string): string | null {
-  // This uses raw `storage.get`, a low-level way to interact with on-chain
-  // storage for simple contracts.
-  // If you have something more complex, check out persistent collections:
-  // https://docs.near.org/docs/roles/developer/contracts/assemblyscript#imports
-  return storage.get<string>(accountId, DEFAULT_MESSAGE);
-}
+export function giveProps(receiverId: string, message: string): u64 {
+  assert(receiverId.trim().length > 0, 'receiverId needs to be non-empty');
+  assert(message.trim().length > 0, 'message needs to be non-empty');
 
-export function setGreeting(message: string): void {
-  const account_id = Context.sender;
+  const sender = Context.sender;
+  const props: Props = {
+    sender,
+    receiverId,
+    message
+  };
 
-  // Use logging.log to record logs permanently to the blockchain!
-  logging.log(
-    // String interpolation (`like ${this}`) is a work in progress:
-    // https://github.com/AssemblyScript/assemblyscript/pull/1115
-    'Saving greeting "' + message + '" for account "' + account_id + '"'
-  );
+  const propsId = allProps.length;
+  allProps.push(props);
+  propsByReceiver.set(receiverId, propsId);
+  propsBySender.set(sender, propsId);
+  logging.log('Sent props from ' + sender + ' to ' + receiverId);
 
-  storage.set(account_id, message);
+  return propsId;
 }
