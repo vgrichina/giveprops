@@ -10,7 +10,6 @@ export default function App() {
   const [recentProps, setRecentProps] = React.useState([])
   const [submitting, setSubmitting] = React.useState(false)
 
-  // when the user has not yet interacted with the form, disable the button
   const [buttonDisabled, setButtonDisabled] = React.useState(true)
 
   // The useEffect hook can be used to fire side-effects during render
@@ -48,6 +47,19 @@ export default function App() {
     )
   }
 
+  async function onReceiverChange(event) {
+    const receiver = event.target.value
+    // TODO: Debounce, extract auto-loading pattern
+    setButtonDisabled(true)
+    try {
+      const account = await window.near.account(receiver)
+      await account.state()
+      setButtonDisabled(false)
+    } catch (error) {
+      console.warn('Error checking account', receiver, error)
+    }
+  }
+
   return (
     // use React Fragment, <>, to avoid wrapping elements in unnecessary divs
     <>
@@ -67,6 +79,10 @@ export default function App() {
 
           try {
             setSubmitting(true)
+
+            // Make sure receiver exists
+            const account = await window.near.account(receiver)
+            await account.state()
 
             // make an update call to the smart contract
             await window.contract.giveProps({
@@ -88,7 +104,7 @@ export default function App() {
 
             <p>Give props to:
 
-              <input type="text" placeholder="username.near" name="receiver"></input>
+              <input type="text" placeholder="username.near" name="receiver" onChange={onReceiverChange}></input>
             </p>
 
             <label
@@ -104,7 +120,7 @@ export default function App() {
             <textarea style={{ width: '100%', height: '12em', fontSize: '1em' }} defaultValue='For being awesome'/>
 
             <button
-              //disabled={buttonDisabled}
+              disabled={buttonDisabled}
               style={{ borderRadius: '5px' }}
             >
               Give props
