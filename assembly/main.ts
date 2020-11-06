@@ -13,7 +13,7 @@
  */
 
 import { Context, logging, storage } from "near-sdk-as";
-import { Props, allProps, propsWithReceiver, propsWithSender } from './model';
+import { Props, allProps, propsWithReceiver, propsWithSender, Props } from './model';
 
 export function giveProps(receiver: string, message: string): u64 {
   assert(receiver.trim().length > 0, 'receiver needs to be non-empty');
@@ -45,6 +45,21 @@ export function getRecentProps(): Props[] {
   let result: Props[] = [];
   for (let i = 0; i < limit && i + offset < allProps.length; i++) {
     result.push(allProps[i + offset]);
+  }
+  return result;
+}
+
+export function getPropsWithReceiver(receiver: string): Props[] {
+  const propsIds = propsWithReceiver(receiver)
+
+  const limit = 10;
+  let offset = propsIds.length - limit;
+  if (offset < 0) {
+    offset = 0;
+  }
+  let result: Props[] = [];
+  for (let i = 0; i < limit && i + offset < propsIds.length; i++) {
+    result.push(allProps[propsIds[i + offset]]);
   }
   return result;
 }

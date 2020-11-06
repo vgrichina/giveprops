@@ -8,6 +8,7 @@ const { networkId } = getConfig(process.env.NODE_ENV || 'development')
 
 export default function App() {
   const [recentProps, setRecentProps] = React.useState([])
+  const [receivedProps, setReceivedProps] = React.useState([])
   const [submitting, setSubmitting] = React.useState(false)
 
   const [buttonDisabled, setButtonDisabled] = React.useState(true)
@@ -18,7 +19,10 @@ export default function App() {
     () => {
       // in this case, we only care to query the contract when signed in
       if (window.walletConnection.isSignedIn()) {
-        window.contract.getRecentProps().then(setRecentProps)
+        (async () => {
+          setRecentProps(await window.contract.getRecentProps())
+          setReceivedProps(await window.contract.getPropsWithReceiver({ receiver: window.accountId }))
+        })().catch(console.error)
       }
     },
 
@@ -129,16 +133,14 @@ export default function App() {
         </form>
 
         <h2>Recent props</h2>
-        {
-          recentProps.map(({ sender, receiver, message, timestamp }) => <div key={`${sender}:${receiver}:${timestamp}`}>
-            <p>{sender} gave {receiver} props for:</p>
-            <blockquote>{message}</blockquote>
-          </div>)
-        }
+        <PropsList data={recentProps} />
 
         <h2>Your props</h2>
 
-        <p>You haven't given or received any props yet.</p>
+        { receivedProps.length == 0
+          ? <p>You haven't given or received any props yet.</p>
+          : <PropsList data={receivedProps} />
+        }
 
         <hr />
         <p>
@@ -147,4 +149,11 @@ export default function App() {
       </main>
     </>
   )
+}
+
+function PropsList(props) {
+  return props.data.map(({ sender, receiver, message, timestamp }) => <div key={`${sender}:${receiver}:${timestamp}`}>
+    <p>{sender} gave {receiver} props for:</p>
+    <blockquote>{message}</blockquote>
+  </div>)
 }
