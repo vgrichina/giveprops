@@ -170,7 +170,7 @@ export default function App() {
 }
 
 function PropsList(props) {
-  return props.data.map(({ sender, receiver, message, timestamp }) => <div key={`${sender}:${receiver}:${timestamp}`}>
+  return props.data.slice(0).reverse().map(({ sender, receiver, message, timestamp }) => <div key={`${sender}:${receiver}:${timestamp}`}>
     <p>{sender} gave {receiver} props for:</p>
     <blockquote>{message}</blockquote>
   </div>)
