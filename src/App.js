@@ -79,8 +79,10 @@ export default function App() {
           event.preventDefault()
 
           const form = event.target
-          const message = form.querySelector('textarea').value
-          const receiver = form.querySelector('input[name="receiver"]').value
+          const messageTextarea = form.querySelector('textarea')
+          const message = messageTextarea.value
+          const receiverInput = form.querySelector('input[name="receiver"]')
+          const receiver = receiverInput.value
 
           try {
             setSubmitting(true)
@@ -94,6 +96,9 @@ export default function App() {
               receiver,
               message
             })
+
+            receiverInput.value = "";
+            messageTextarea.value = "";
           } catch (e) {
             alert(
               'Something went wrong! ' +
