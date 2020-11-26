@@ -12,54 +12,62 @@
  *
  */
 
-import { Context, logging, storage } from "near-sdk-as";
-import { Props, allProps, propsWithReceiver, propsWithSender, Props } from './model';
+import { Context, logging, PersistentVector } from "near-sdk-as";
+import { Props, allProps, propsWithReceiver, propsWithSender } from './model';
 
 export function giveProps(receiver: string, message: string): u64 {
-  assert(receiver.trim().length > 0, 'receiver needs to be non-empty');
-  assert(message.trim().length > 0, 'message needs to be non-empty');
+    assert(receiver.trim().length > 0, 'receiver needs to be non-empty');
+    assert(message.trim().length > 0, 'message needs to be non-empty');
 
-  const sender = Context.sender;
-  const timestamp = Context.blockTimestamp;
-  const props: Props = {
-    sender,
-    receiver,
-    message,
-    timestamp
-  };
+    const sender = Context.sender;
+    const timestamp = Context.blockTimestamp;
+    const props: Props = {
+        sender,
+        receiver,
+        message,
+        timestamp
+    };
 
-  const propsId = allProps.push(props);
-  propsWithReceiver(receiver).push(propsId);
-  propsWithSender(sender).push(propsId);
-  logging.log('Sent props from ' + sender + ' to ' + receiver);
+    const propsId = allProps.push(props);
+    propsWithReceiver(receiver).push(propsId);
+    propsWithSender(sender).push(propsId);
+    logging.log('Sent props from ' + sender + ' to ' + receiver);
 
-  return propsId;
+    return propsId;
 }
 
 export function getRecentProps(): Props[] {
-  const limit = 10;
-  let offset = allProps.length - limit;
-  if (offset < 0) {
-    offset = 0;
-  }
-  let result: Props[] = [];
-  for (let i = 0; i < limit && i + offset < allProps.length; i++) {
-    result.push(allProps[i + offset]);
-  }
-  return result;
+    const limit = 10;
+    let offset = allProps.length - limit;
+    if (offset < 0) {
+        offset = 0;
+    }
+    let result: Props[] = [];
+    for (let i = 0; i < limit && i + offset < allProps.length; i++) {
+        result.push(allProps[i + offset]);
+    }
+    return result;
+}
+
+function getRecentPropsWithIds(propsIds: PersistentVector<i32>): Props[] {
+    const limit = 10;
+    let offset = propsIds.length - limit;
+    if (offset < 0) {
+        offset = 0;
+    }
+    let result: Props[] = [];
+    for (let i = 0; i < limit && i + offset < propsIds.length; i++) {
+        result.push(allProps[propsIds[i + offset]]);
+    }
+    return result;
 }
 
 export function getPropsWithReceiver(receiver: string): Props[] {
-  const propsIds = propsWithReceiver(receiver)
+    const propsIds = propsWithReceiver(receiver);
+    return getRecentPropsWithIds(propsIds);
+}
 
-  const limit = 10;
-  let offset = propsIds.length - limit;
-  if (offset < 0) {
-    offset = 0;
-  }
-  let result: Props[] = [];
-  for (let i = 0; i < limit && i + offset < propsIds.length; i++) {
-    result.push(allProps[propsIds[i + offset]]);
-  }
-  return result;
+export function getPropsWithSender(sender: string): Props[] {
+    const propsIds = propsWithSender(sender);
+    return getRecentPropsWithIds(propsIds);
 }

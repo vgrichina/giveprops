@@ -9,9 +9,16 @@ const { networkId } = getConfig(process.env.NODE_ENV || 'development')
 export default function App() {
   const [recentProps, setRecentProps] = React.useState([])
   const [receivedProps, setReceivedProps] = React.useState([])
+  const [sentProps, setSentProps] = React.useState([])
   const [submitting, setSubmitting] = React.useState(false)
 
   const [buttonDisabled, setButtonDisabled] = React.useState(true)
+
+  async function loadProps() {
+    setRecentProps(await window.contract.getRecentProps())
+    setReceivedProps(await window.contract.getPropsWithReceiver({ receiver: window.accountId }))
+    setSentProps(await window.contract.getPropsWithSender({ sender: window.accountId }))
+  }
 
   // The useEffect hook can be used to fire side-effects during render
   // Learn more: https://reactjs.org/docs/hooks-intro.html
@@ -19,10 +26,7 @@ export default function App() {
     () => {
       // in this case, we only care to query the contract when signed in
       if (window.walletConnection.isSignedIn()) {
-        (async () => {
-          setRecentProps(await window.contract.getRecentProps())
-          setReceivedProps(await window.contract.getPropsWithReceiver({ receiver: window.accountId }))
-        })().catch(console.error)
+        loadProps().catch(console.error)
       }
     },
 
@@ -99,6 +103,7 @@ export default function App() {
             throw e
           } finally {
             setSubmitting(false)
+            await loadProps()
           }
         }}>
           <fieldset id="fieldset" disabled={submitting}>
@@ -134,9 +139,20 @@ export default function App() {
 
         <h2>Your props</h2>
 
-        { receivedProps.length == 0
+        { receivedProps.length == 0 && sentProps.length == 0
           ? <p>You haven't given or received any props yet.</p>
-          : <PropsList data={receivedProps} />
+          : <>
+            { receivedProps.length > 0 && <>
+                <h3>Received props</h3>
+                <PropsList data={receivedProps} />
+              </>
+            }
+            { sentProps.length > 0 && <>
+                <h3>Sent props</h3>
+                <PropsList data={sentProps} />
+              </>
+            }
+          </>
         }
 
         <hr />
